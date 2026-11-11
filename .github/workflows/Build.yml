@@ -48,7 +48,7 @@ jobs:
         continue-on-error: true
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '8.4'
+          gradle-version: '8.7'
           cache-disabled: true
 
       - name: Setup Gradle (attempt 2)
@@ -57,14 +57,14 @@ jobs:
         continue-on-error: true
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '8.4'
+          gradle-version: '8.7'
           cache-disabled: true
 
       - name: Setup Gradle (attempt 3)
         if: steps.gradle_second.outcome == 'failure'
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '8.4'
+          gradle-version: '8.7'
           cache-disabled: true
 
       - name: Build and test debug APK
