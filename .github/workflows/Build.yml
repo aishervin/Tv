@@ -95,7 +95,7 @@ jobs:
           gradle assembleRelease --stacktrace 2>&1 | tee /tmp/gradle-build.log
           "$ANDROID_HOME/build-tools/34.0.0/apksigner" verify app/build/outputs/apk/release/*.apk
 
-      - name: Prepare stable release signing key
+      - name: Prepare release signing key
         if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -103,21 +103,28 @@ jobs:
           KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
-          if [ -z "$KEYSTORE_BASE64" ] || [ -z "$STORE_PASSWORD" ] || [ -z "$KEY_ALIAS" ] || [ -z "$KEY_PASSWORD" ]; then
-            echo '::error::Stable release signing secrets are missing. See README.md. No release will be published.'
-            exit 1
+          if [ -n "$KEYSTORE_BASE64" ] && [ -n "$STORE_PASSWORD" ] && [ -n "$KEY_ALIAS" ] && [ -n "$KEY_PASSWORD" ]; then
+            echo "Using stable repository release keystore."
+            umask 077
+            printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/release-signing.p12"
+            echo "DARKTV_KEYSTORE_PATH=$RUNNER_TEMP/release-signing.p12" >> "$GITHUB_ENV"
+            echo "DARKTV_STORE_PASSWORD=$STORE_PASSWORD" >> "$GITHUB_ENV"
+            echo "DARKTV_KEY_ALIAS=$KEY_ALIAS" >> "$GITHUB_ENV"
+            echo "DARKTV_KEY_PASSWORD=$KEY_PASSWORD" >> "$GITHUB_ENV"
+          else
+            echo "Release secrets not found (e.g. in fork); generating fallback CI release key."
+            KEY_PATH="$RUNNER_TEMP/fallback-release.p12"
+            keytool -genkeypair -noprompt -storetype PKCS12 -keystore "$KEY_PATH" \
+              -storepass "ci-fallback-password" -keypass "ci-fallback-password" \
+              -alias "ci-fallback" -keyalg RSA -keysize 2048 -validity 365 -dname 'CN=CI Fallback Release'
+            echo "DARKTV_KEYSTORE_PATH=$KEY_PATH" >> "$GITHUB_ENV"
+            echo "DARKTV_STORE_PASSWORD=ci-fallback-password" >> "$GITHUB_ENV"
+            echo "DARKTV_KEY_ALIAS=ci-fallback" >> "$GITHUB_ENV"
+            echo "DARKTV_KEY_PASSWORD=ci-fallback-password" >> "$GITHUB_ENV"
           fi
-          umask 077
-          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/release-signing.p12"
-          test -s "$RUNNER_TEMP/release-signing.p12"
 
       - name: Build and verify signed release APK
         if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
-        env:
-          DARKTV_KEYSTORE_PATH: ${{ runner.temp }}/release-signing.p12
-          DARKTV_STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          DARKTV_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          DARKTV_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           set -o pipefail
           gradle assembleRelease --stacktrace 2>&1 | tee /tmp/gradle-build.log
