@@ -16,7 +16,7 @@ android {
 
     defaultConfig {
         applicationId = "com.darktv.player"
-        minSdk = 21
+        minSdk = 24
         targetSdk = 34
         versionCode = System.getenv("DARKTV_VERSION_CODE")?.toIntOrNull() ?: 10
         versionName = System.getenv("DARKTV_VERSION_NAME") ?: "1.0.0"
@@ -61,6 +61,9 @@ android {
     buildFeatures {
         compose = true
     }
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.8"
+    }
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -86,6 +89,7 @@ dependencies {
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.material3:material3")
+    implementation("androidx.compose.material:material-icons-extended")
 
     // Media3 ExoPlayer for Professional HLS Streaming
     val media3Version = "1.2.1"
@@ -100,4 +104,11 @@ dependencies {
     // Coil for Custom Logos Support
     implementation("io.coil-kt:coil-compose:2.5.0")
     implementation("io.coil-kt:coil-svg:2.5.0")
+
+    // Retrofit for Telegram API
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+
+    // FFmpeg-Kit for streaming
+    implementation("dev.ffmpegkit-maintained:ffmpeg-kit-full:8.1.7")
 }

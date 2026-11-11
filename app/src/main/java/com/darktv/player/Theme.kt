@@ -106,7 +106,7 @@ internal fun AppTheme(inPictureInPicture: Boolean, onEnterPictureInPicture: () -
                     Spacer(Modifier.height(14.dp))
                     Text("Dark TV Live", color = materialPalette.text, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                 }
-            } else TvApp(settings, inPictureInPicture, onEnterPictureInPicture)
+            } else TvApp(settings, TelegramSettings(context), inPictureInPicture, onEnterPictureInPicture)
         }
     }
 }

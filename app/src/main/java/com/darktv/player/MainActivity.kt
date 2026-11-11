@@ -87,6 +87,8 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import com.arthenica.ffmpegkit.FFmpegKit
+import com.arthenica.ffmpegkit.ReturnCode
 
 private fun categoryLabel(key: String, english: Boolean): String {
     val labels = mapOf(
@@ -186,7 +188,7 @@ class MainActivity : ComponentActivity() {
 @OptIn(UnstableApi::class)
 @kotlin.OptIn(androidx.compose.ui.ExperimentalComposeUiApi::class)
 @Composable
-fun TvApp(settings: AppearanceSettings, inPictureInPicture: Boolean, onEnterPictureInPicture: () -> Unit) {
+fun TvApp(settings: AppearanceSettings, telegramSettings: TelegramSettings, inPictureInPicture: Boolean, onEnterPictureInPicture: () -> Unit) {
     val palette = LocalPalette.current
     val themeAccent = LocalAccent.current
     val context = LocalContext.current
@@ -213,6 +215,7 @@ fun TvApp(settings: AppearanceSettings, inPictureInPicture: Boolean, onEnterPict
         if (refreshed != null) channels = refreshed
     }
     val prefs = remember { context.getSharedPreferences("settings", 0) }
+    val telegramSettings = remember { TelegramSettings(context) }
     var english by remember { mutableStateOf(prefs.getBoolean("english", false)) }
     var showSettings by remember { mutableStateOf(false) }
     var updateStatus by remember { mutableStateOf<UpdateStatus>(UpdateStatus.Checking) }
@@ -505,6 +508,15 @@ fun TvApp(settings: AppearanceSettings, inPictureInPicture: Boolean, onEnterPict
                     PlayerControlButton(Icons.Default.Refresh, tr("تلاش دوباره", "Retry")) { retry++ }
                     PlayerControlButton(Icons.Default.List, tr("شبکه‌ها", "Channels")) { panel = "channels" }
                     PlayerControlButton(Icons.Default.Dns, tr("سرورها", "Servers")) { panel = "servers" }
+                    PlayerControlButton(Icons.Default.Send, tr("شروع استریم", "Start Stream")) {
+                        val command = "-re -i ${channel.streamSources()[source].url} -c copy -f flv ${telegramSettings.botToken}/${telegramSettings.chatId}"
+                        FFmpegKit.executeAsync(command) { session ->
+                            val returnCode = session.returnCode
+                            homeScope.launch(Dispatchers.Main) {
+                                Toast.makeText(context, if (ReturnCode.isSuccess(returnCode)) "Streaming!" else "Failed!", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
                     if (canUsePip) PlayerControlButton(Icons.Default.PictureInPictureAlt, tr("پخش شناور", "Picture-in-picture")) { onEnterPictureInPicture() }
                     PlayerControlButton(Icons.Default.Settings, tr("تنظیمات", "Settings"), Modifier.focusRequester(playerSettingsFocus)) {
                         settingsReturnFocus = playerSettingsFocus; openUpdates = false; showSettings = true
@@ -535,7 +547,7 @@ fun TvApp(settings: AppearanceSettings, inPictureInPicture: Boolean, onEnterPict
             }
         }
     }
-    if (showSettings && !inPictureInPicture) SettingsPopup(settings, english, isTv, updateStatus, updateUnread, openUpdates,
+    if (showSettings && !inPictureInPicture) SettingsPopup(settings, telegramSettings, english, isTv, updateStatus, updateUnread, openUpdates,
         onPictureInPicture = if (canUsePip && panel != "home") { { showSettings = false; panel = "player"; hudVisible = false; onEnterPictureInPicture() } } else null,
         onUpdateSeen = { acknowledgeUpdate() }, onCheckUpdate = { updateCheck++ }, onLanguage = {
         english = it
