@@ -263,6 +263,7 @@ fun TvApp(settings: AppearanceSettings, telegramSettings: TelegramSettings, inPi
     var buffering by remember { mutableStateOf(false) }
     var findingServer by remember { mutableStateOf(false) }
     var playing by remember { mutableStateOf(false) }
+    var streamingToTelegram by remember { mutableStateOf(false) }
     var muted by remember { mutableStateOf(false) }
     var resize by remember { mutableIntStateOf(AspectRatioFrameLayout.RESIZE_MODE_FIT) }
     var query by remember { mutableStateOf("") }
