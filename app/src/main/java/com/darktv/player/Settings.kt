@@ -74,8 +74,8 @@ class TelegramSettings(context: Context) {
 
     fun save() {
         prefs.edit()
-            .putString("bot_token", botToken)
-            .putString("chat_id", chatId)
+            .putString("bot_token", rtmpServerUrl)
+            .putString("chat_id", streamKey)
             .apply()
     }
 }
@@ -201,8 +201,8 @@ fun SettingsPopup(settings: AppearanceSettings, telegramSettings: TelegramSettin
                             .border(if (plusFocused) 2.dp else 0.dp, if (plusFocused) MaterialTheme.colorScheme.primary else Color.Transparent, CircleShape), colors = IconButtonDefaults.filledIconButtonColors(containerColor = Color(0xFFD4D8E0), contentColor = Color(0xFF30333A))) { Icon(Icons.Default.Add, tr("بزرگ‌تر", "Larger"), modifier = Modifier.size(20.dp)) }
                     }
                     SectionLabel(tr("تنظیمات استریم (RTMP)", "Streaming Settings (RTMP)"))
-                    OutlinedTextField(value = telegramSettings.botToken, onValueChange = { telegramSettings.botToken = it; telegramSettings.save() }, label = { Text(tr("آدرس RTMP", "RTMP URL")) }, modifier = Modifier.fillMaxWidth())
-                    OutlinedTextField(value = telegramSettings.chatId, onValueChange = { telegramSettings.chatId = it; telegramSettings.save() }, label = { Text(tr("کلید استریم", "Stream Key")) }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = telegramSettings.rtmpServerUrl, onValueChange = { telegramSettings.rtmpServerUrl = it; telegramSettings.save() }, label = { Text(tr("آدرس RTMP", "RTMP URL")) }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = telegramSettings.streamKey, onValueChange = { telegramSettings.streamKey = it; telegramSettings.save() }, label = { Text(tr("کلید استریم", "Stream Key")) }, modifier = Modifier.fillMaxWidth())
                     TextButton(onClick = { openUrl(UpdateChecker.REPOSITORY_URL) }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
                         Icon(painterResource(R.drawable.ic_github), null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(6.dp))
