@@ -522,8 +522,15 @@ fun TvApp(settings: AppearanceSettings, telegramSettings: TelegramSettings, inPi
                             } else {
                                 val destination = "$server/$key"
                                 fun quoteArg(value: String) = "'" + value.replace("'", "'\\''") + "'"
-                                val input = channel.streamSources()[source].url
-                                val command = "-i ${quoteArg(input)} -map 0:v:0 -map 0:a:0? -c copy -f flv ${quoteArg(destination)}"
+                                val selected = channel.streamSources()[source]
+                                val headers = selected.headers.toMutableMap()
+                                if (selected.url.contains("46.245.122.7")) {
+                                    headers.putIfAbsent("Referer", "https://mytvsat.tv/")
+                                    headers.putIfAbsent("Origin", "https://mytvsat.tv")
+                                }
+                                val headerLines = headers.entries.joinToString("") { "${it.key}: ${it.value}\\r\\n" }
+                                val headerOption = if (headerLines.isNotEmpty()) "-headers ${quoteArg(headerLines)} " else ""
+                                val command = "${headerOption}-i ${quoteArg(selected.url)} -map 0:v:0 -map 0:a:0? -c copy -f flv ${quoteArg(destination)}"
                                 streamingToTelegram = true
                                 try {
                                     FFmpegKit.executeAsync(command) { session ->
