@@ -69,8 +69,8 @@ class AppearanceSettings(context: Context) {
 
 class TelegramSettings(context: Context) {
     private val prefs = context.getSharedPreferences("telegram_settings", 0)
-    var botToken by mutableStateOf(prefs.getString("bot_token", "") ?: "")
-    var chatId by mutableStateOf(prefs.getString("chat_id", "") ?: "")
+    var rtmpServerUrl by mutableStateOf(prefs.getString("bot_token", "") ?: "")
+    var streamKey by mutableStateOf(prefs.getString("chat_id", "") ?: "")
 
     fun save() {
         prefs.edit()

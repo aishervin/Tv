@@ -107,5 +107,5 @@ dependencies {
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
 
     // FFmpeg-Kit for streaming
-    implementation("dev.ffmpegkit-maintained:ffmpeg-kit-full:8.1.7")
+    implementation("dev.ffmpegkit-maintained:ffmpeg-kit-https:8.1.7")
 }

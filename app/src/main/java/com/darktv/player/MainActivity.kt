@@ -508,12 +508,37 @@ fun TvApp(settings: AppearanceSettings, telegramSettings: TelegramSettings, inPi
                     PlayerControlButton(Icons.Default.Refresh, tr("تلاش دوباره", "Retry")) { retry++ }
                     PlayerControlButton(Icons.Default.List, tr("شبکه‌ها", "Channels")) { panel = "channels" }
                     PlayerControlButton(Icons.Default.Dns, tr("سرورها", "Servers")) { panel = "servers" }
-                    PlayerControlButton(Icons.Default.Send, tr("شروع استریم", "Start Stream")) {
-                        val command = "-re -i ${channel.streamSources()[source].url} -c copy -f flv ${telegramSettings.botToken}/${telegramSettings.chatId}"
-                        FFmpegKit.executeAsync(command) { session ->
-                            val returnCode = session.returnCode
-                            homeScope.launch(Dispatchers.Main) {
-                                Toast.makeText(context, if (ReturnCode.isSuccess(returnCode)) "Streaming!" else "Failed!", Toast.LENGTH_SHORT).show()
+                    PlayerControlButton(if (streamingToTelegram) Icons.Default.Stop else Icons.Default.Send,
+                        if (streamingToTelegram) tr("توقف استریم", "Stop Stream") else tr("شروع استریم", "Start Stream")) {
+                        if (streamingToTelegram) {
+                            FFmpegKit.cancel()
+                            streamingToTelegram = false
+                            Toast.makeText(context, tr("استریم متوقف شد", "Stream stopped"), Toast.LENGTH_SHORT).show()
+                        } else {
+                            val server = telegramSettings.rtmpServerUrl.trim().trimEnd('/')
+                            val key = telegramSettings.streamKey.trim().trimStart('/')
+                            if (!(server.startsWith("rtmp://", true) || server.startsWith("rtmps://", true)) || key.isBlank()) {
+                                Toast.makeText(context, tr("آدرس RTMP و کلید استریم را در تنظیمات وارد کن", "Enter the RTMP server URL and stream key in Settings"), Toast.LENGTH_LONG).show()
+                            } else {
+                                val destination = "$server/$key"
+                                fun quoteArg(value: String) = "'" + value.replace("'", "'\\''") + "'"
+                                val input = channel.streamSources()[source].url
+                                val command = "-i ${quoteArg(input)} -map 0:v:0 -map 0:a:0? -c copy -f flv ${quoteArg(destination)}"
+                                streamingToTelegram = true
+                                try {
+                                    FFmpegKit.executeAsync(command) { session ->
+                                        val success = ReturnCode.isSuccess(session.returnCode)
+                                        homeScope.launch(Dispatchers.Main) {
+                                            streamingToTelegram = false
+                                            Toast.makeText(context,
+                                                if (success) tr("استریم پایان یافت", "Stream finished") else tr("استریم ناموفق بود؛ آدرس یا سازگاری کانال را بررسی کن", "Stream failed; check the RTMP details or channel compatibility"),
+                                                Toast.LENGTH_LONG).show()
+                                        }
+                                    }
+                                } catch (_: Exception) {
+                                    streamingToTelegram = false
+                                    Toast.makeText(context, tr("شروع استریم ناموفق بود", "Could not start stream"), Toast.LENGTH_LONG).show()
+                                }
                             }
                         }
                     }
